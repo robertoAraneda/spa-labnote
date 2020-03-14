@@ -81,8 +81,10 @@
 
             <div class="content">
                 <div class="title m-b-md">
-                    Laravel
+                    SIGAF
+
                 </div>
+                <h5>Sistema de Información para la Gestión de Acciones Formativas </h5>
 
                 <div class="links">
                     <a href="https://laravel.com/docs">Docs</a>
