@@ -3,71 +3,86 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
-    
-  public  $loginAfterSignUp = true;
+   /**
+     * Create a new AuthController instance.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        $this->middleware('auth:api', ['except' => ['login']]);
+    }
 
-	public  function  register(User $user, Request  $request) {
-		//$user = new  User();
-		$user->name = $request->name;
-		$user->surname = $request->surname;
-		$user->email = $request->email;
-		$user->password = bcrypt($request->password);
-		$user->save();
+    /**
+     * Get a JWT via given credentials.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function login()
+    {
+        $credentials = request(['email', 'password']);
 
-		if ($this->loginAfterSignUp) {
-			return  $this->login($request);
-		}
+        if (! $token = auth()->attempt($credentials)) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
 
-		return  response()->json([
-			'status' => 'ok',
-			'data' => $user
-		], 200);
-	}
+        return $this->respondWithToken($token);
+    }
 
-	public  function  login(Request  $request) {
-		$input = $request->only('email', 'password');
-		$jwt_token = null;
-		if (!$jwt_token = JWTAuth::attempt($input)) {
-			return  response()->json([
-				'status' => 'invalid_credentials',
-				'message' => 'Correo o contraseña no válidos.',
-			], 401);
-		}
+    /**
+     * Get the authenticated User.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function me()
+    {
+        return response()->json(auth()->user());
+    }
 
-		return  response()->json([
-			'status' => 'ok',
-			'token' => $jwt_token,
-		]);
-	}
+    /**
+     * Log the user out (Invalidate the token).
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function logout()
+    {
+        auth()->logout();
 
-	public  function  logout(Request  $request) {
-		$this->validate($request, [
-			'token' => 'required'
-		]);
+        return response()->json(['message' => 'Successfully logged out']);
+    }
 
-		try {
-			JWTAuth::invalidate($request->token);
-			return  response()->json([
-				'status' => 'ok',
-				'message' => 'Cierre de sesión exitoso.'
-			]);
-		} catch (JWTException  $exception) {
-			return  response()->json([
-				'status' => 'unknown_error',
-				'message' => 'Al usuario no se le pudo cerrar la sesión.'
-			], 500);
-		}
-	}
+    /**
+     * Refresh a token.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function refresh()
+    {
+        return $this->respondWithToken(auth()->refresh());
+    }
 
-	public  function  getAuthUser(Request  $request) {
-		$this->validate($request, [
-			'token' => 'required'
-		]);
+    /**
+     * Get the token array structure.
+     *
+     * @param  string $token
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    protected function respondWithToken($token)
+    {
+        return response()->json([
+            'access_token' => $token,
+            'user' => $this->guard()->user(),
+            'token_type' => 'bearer',
+            'expires_in' => auth()->factory()->getTTL() * 60
+        ]);
+    }
 
-		$user = JWTAuth::authenticate($request->token);
-		return  response()->json(['user' => $user]);
-	}
+    public function guard(){
+      return Auth::Guard('api');
+    }
 }

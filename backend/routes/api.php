@@ -14,15 +14,45 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('auth:api')->get('/user', function (Request $request) {
-    return $request->user();
-});
+// Route::middleware('auth:api')->get('/v1/user', function (Request $request) {
+//     return $request->user();
+// });
 
 
-// estas rutas se pueden acceder sin proveer de un token válido.
-Route::post('/login', 'AuthController@login');
-Route::post('/register', 'AuthController@register');
-// estas rutas requiren de un token válido para poder accederse.
-Route::group(['middleware' => 'auth.jwt'], function () {
-    Route::post('/logout', 'AuthController@logout');
+// // estas rutas se pueden acceder sin proveer de un token válido.
+// Route::post('/login', 'AuthController@login');
+// Route::post('/register', 'AuthController@register');
+// // estas rutas requiren de un token válido para poder accederse.
+// Route::group(['middleware' => 'auth.jwt'], function () {
+//     Route::post('/logout', 'AuthController@logout');
+// });
+
+// Route::prefix('v1')->group(function () {
+//     Route::prefix('auth')->group(function () {
+//         // Below mention routes are public, user can access those without any restriction.
+//         // Create New User
+//         Route::post('register', 'AuthController@register');
+//         // Login User
+//         Route::post('login', 'AuthController@login');
+        
+//         // Refresh the JWT Token
+//         Route::get('refresh', 'AuthController@refresh');
+//         //Route::get('user', 'AuthController@user');
+        
+//         // Below mention routes are available only for the authenticated users.
+//         Route::middleware('auth:api')->group(function () {
+//             // Get user info
+//             Route::get('user', 'AuthController@user');
+//             // Logout user from application
+//             Route::post('logout', 'AuthController@logout');
+//         });
+//     });
+//   });
+
+  Route::group(['prefix' => 'auth'], function ($router) {
+    Route::post('login', 'AuthController@login');
+    Route::post('logout', 'AuthController@logout');
+    Route::post('refresh', 'AuthController@refresh');
+    Route::post('me', 'AuthController@me');
+
 });
